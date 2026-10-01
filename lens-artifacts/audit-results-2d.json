@@ -1,0 +1,209 @@
+{
+  "target": "http://127.0.0.1:3333",
+  "timestamp": "2026-09-28T04:36:33.860Z",
+  "viewModeAudited": "2d",
+  "gates": {
+    "gate0": {
+      "pass": true,
+      "consoleErrorCount": 0,
+      "consoleErrors": [],
+      "networkFailureCount": 0,
+      "networkFailures": []
+    },
+    "gate1": {
+      "pass": true,
+      "defects": []
+    },
+    "gate2": {
+      "pass": true,
+      "defects": [],
+      "buttonDimensions": [
+        {
+          "text": "🎮 Roblox 3D",
+          "w": 105,
+          "h": 24
+        },
+        {
+          "text": "🗺️ 2D Office",
+          "w": 105,
+          "h": 24
+        },
+        {
+          "text": "1x",
+          "w": 28,
+          "h": 23
+        },
+        {
+          "text": "2x",
+          "w": 28,
+          "h": 23
+        },
+        {
+          "text": "4x",
+          "w": 28,
+          "h": 23
+        },
+        {
+          "text": "",
+          "w": 28,
+          "h": 28
+        },
+        {
+          "text": "Full Campus",
+          "w": 96,
+          "h": 26
+        },
+        {
+          "text": "Manager Suite",
+          "w": 109,
+          "h": 26
+        },
+        {
+          "text": "Dev Wing",
+          "w": 81,
+          "h": 26
+        },
+        {
+          "text": "Research Lab",
+          "w": 104,
+          "h": 26
+        },
+        {
+          "text": "Conference",
+          "w": 94,
+          "h": 26
+        },
+        {
+          "text": "QA & Security",
+          "w": 106,
+          "h": 26
+        },
+        {
+          "text": "Lounge",
+          "w": 68,
+          "h": 26
+        },
+        {
+          "text": "Servers",
+          "w": 71,
+          "h": 26
+        },
+        {
+          "text": "👑ORIONidle",
+          "w": 105,
+          "h": 44
+        },
+        {
+          "text": "⚙️FORGEidle",
+          "w": 105,
+          "h": 44
+        },
+        {
+          "text": "🎨FRAMEerror",
+          "w": 105,
+          "h": 44
+        },
+        {
+          "text": "✨AURORAidle",
+          "w": 112,
+          "h": 44
+        },
+        {
+          "text": "📡RADARidle",
+          "w": 105,
+          "h": 44
+        },
+        {
+          "text": "📊QUANTidle",
+          "w": 105,
+          "h": 44
+        },
+        {
+          "text": "🔬PRISMworking",
+          "w": 105,
+          "h": 44
+        },
+        {
+          "text": "👁️LENSworking",
+          "w": 98,
+          "h": 44
+        },
+        {
+          "text": "🛡️SENTINELidle",
+          "w": 126,
+          "h": 44
+        },
+        {
+          "text": "🌐ATLASidle",
+          "w": 105,
+          "h": 44
+        },
+        {
+          "text": "📋NEXUSidle",
+          "w": 105,
+          "h": 44
+        }
+      ]
+    },
+    "gate3": {
+      "pass": true,
+      "viewportFuzzing": [
+        {
+          "width": 320,
+          "overflow": 0
+        },
+        {
+          "width": 375,
+          "overflow": 0
+        },
+        {
+          "width": 414,
+          "overflow": 0
+        },
+        {
+          "width": 768,
+          "overflow": 0
+        },
+        {
+          "width": 1024,
+          "overflow": 0
+        },
+        {
+          "width": 1280,
+          "overflow": 0
+        },
+        {
+          "width": 1440,
+          "overflow": 0
+        },
+        {
+          "width": 1920,
+          "overflow": 0
+        }
+      ]
+    }
+  },
+  "sectors": {},
+  "viewports": {},
+  "interactions": {
+    "drawer": {
+      "visible": true,
+      "excerpt": "👑 | ORION | orion | Chief of Staff & Orchestrator | CURRENT STATUS | ○ Idle / Standby | ZONE | Manager | LIVE ACTIVITY | terminal command running (40s elapsed) | No active Kanban card assigned | ENGINE TELEMETRY | Model | codex | Message Turns | 27 | Tool Calls | 14 | Home Desk | 190, 150 | RECENT "
+    }
+  },
+  "defects": [],
+  "artifacts": [
+    "/root/projects/hermes-virtual-office/lens-artifacts/01-2d-desktop-1440x900.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/02-2d-tablet-1024x768.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/03-2d-constrained-768x1024.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/04-2d-sector-manager-suite.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/05-2d-sector-dev-wing.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/06-2d-sector-research-lab.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/07-2d-sector-conference-war-room.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/08-2d-sector-qa-security.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/09-2d-sector-lounge-breakroom.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/10-2d-sector-servers-datacenter.png",
+    "/root/projects/hermes-virtual-office/lens-artifacts/11-2d-agent-drawer-open.png"
+  ],
+  "fps": 40
+}

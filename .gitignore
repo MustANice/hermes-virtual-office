@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# production build
+dist/
+
+# logs and environment
+*.log
+.env
+.env.*
+.DS_Store
+
+# temporary test artifacts and stream dumps
+screenshot-*.png
+current-live.png
+paket-b-preflight.png
+crop_exec.jpg
+astra_*_output.txt
+astra_*.txt
+rendered_redesign_office.jpg
