@@ -1,0 +1,19 @@
+[Unit]
+Description=Ruang - Hermes 3D Virtual Office & Fleet Mission Control
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/projects/ruang
+Environment="PATH=/usr/local/lib/hermes-agent/venv/bin:/usr/local/bin:/root/.local/bin:/usr/bin:/bin"
+Environment="NODE_ENV=production"
+Environment="RUANG_PORT=3001"
+ExecStart=/usr/local/bin/node /root/projects/ruang/bin/ruang.js --port 3001
+Restart=always
+RestartSec=3s
+LimitNOFILE=65536
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

@@ -44,7 +44,26 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-/** Display name for an agent: its Hermes profile name as-is. */
+const FLEET_LABELS: Record<string, string> = {
+  orion: 'ORION',
+  aurora: 'AURORA',
+  frame: 'FRAME',
+  lens: 'LENS',
+  forge: 'FORGE',
+  prism: 'PRISM',
+  sentinel: 'SENTINEL',
+  atlas: 'ATLAS',
+  radar: 'RADAR',
+  quant: 'QUANT',
+  nexus: 'NEXUS',
+  scholar: 'SCHOLAR',
+  groupbot: 'GroupBot',
+  default: 'Default',
+  opencode: 'OpenCode',
+}
+
+/** Display name for an agent: its Hermes profile name formatted nicely. */
 export function agentLabel(profile: string | undefined): string {
-  return profile ?? 'Hermes'
+  if (!profile) return 'Hermes'
+  return FLEET_LABELS[profile.toLowerCase()] ?? profile
 }

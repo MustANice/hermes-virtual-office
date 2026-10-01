@@ -112,7 +112,12 @@ export interface LogFile { name: string; label: string; source: Source<LogLine[]
 export interface LogsSnapshot { files: LogFile[]; fetchedAt: string }
 
 type Run = (file: string, args: string[], options?: RunOptions) => Promise<string>
-interface RunOptions { /** stdout of a non-zero exit that is an expected empty state, not a failure. */ benign?: RegExp }
+interface RunOptions {
+  /** stdout of a non-zero exit that is an expected empty state, not a failure. */
+  benign?: RegExp
+  /** If true, missing command (ENOENT) is treated as a benign missing optional tool. */
+  optional?: boolean
+}
 
 /** Error thrown by the command runner. Carries stdout so a caller can recognise a benign non-zero exit. */
 export class CommandError extends Error {
@@ -461,7 +466,7 @@ async function systemRun(file: string, args: string[], options: RunOptions = {})
     return stdout
   } catch (error) {
     const failure = describeFailure(error)
-    const benign = options.benign?.test(failure.stdout) ?? false
+    const benign = (options.benign?.test(failure.stdout) ?? false) || (options.optional === true && failure.message === 'Command not installed or not on PATH.')
     recordCommand({ command, ok: benign, durationMs: Date.now() - started, at: new Date(started).toISOString(), ...(benign ? {} : { error: failure.message }) })
     throw failure
   }
@@ -486,9 +491,9 @@ function failure<T>(error: unknown, fallback: T): Source<T> {
   return { availability: 'unavailable', data: fallback, error: { code, message: code === 'TIMEOUT' ? 'Read timed out.' : message } }
 }
 
-async function read<T>(run: Run, file: string, args: string[], parse: (output: string) => T, fallback: T): Promise<Source<T>> {
+async function read<T>(run: Run, file: string, args: string[], parse: (output: string) => T, fallback: T, options?: RunOptions): Promise<Source<T>> {
   try {
-    return { availability: 'available', data: parse(await run(file, args)) }
+    return { availability: 'available', data: parse(await run(file, args, options)) }
   } catch (error) {
     return failure(error, fallback)
   }
@@ -503,7 +508,7 @@ export const PROFILE_NAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/
 export async function collectSnapshot(run: Run = systemRun): Promise<RuntimeSnapshot> {
   const [profiles, openCode] = await Promise.all([
     read(run, 'hermes', ['profile', 'list'], parseProfiles, []),
-    read(run, 'opencode', ['--version'], (value) => value.trim().split('\n').pop()?.trim() || 'Unknown', 'Unknown'),
+    read(run, 'opencode', ['--version'], (value) => value.trim().split('\n').pop()?.trim() || 'Unknown', 'Unknown', { optional: true }),
   ])
   return { profiles, openCode, fetchedAt: new Date().toISOString() }
 }
@@ -750,7 +755,7 @@ export async function collectTaskDetail(id: string, run: Run = systemRun, board?
 export const ACTIVITY_WINDOW = '3m'
 /** At most this many profiles are probed at once, so many profiles do not flood the machine. */
 const ACTIVITY_CONCURRENCY = 4
-const LOG_RECORD = /^(\d{4}-\d{2}-\d{2}[ T][\d:,.]+)\s+[A-Z]+(?:\s+\[[^\]]*\])?\s+([\w.]+):\s?(.*)$/
+const LOG_RECORD = /^(\d{4}-\d{2}-\d{2}[ T][\d:,.]+)\s+([A-Z]+)(?:\s+\[[^\]]*\])?\s+([\w.]+):\s?(.*)$/
 const CHAT_MESSAGE = /\b(message|reply|replied|respond|inbound|outbound|received|sending|sent|chat)\b/i
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   chat: 'Replying to a chat',
@@ -759,9 +764,17 @@ const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   thinking: 'Working on a request',
 }
 
-function loggerKind(name: string, message: string): ActivityKind | 'gateway' | undefined {
+function loggerKind(name: string, message: string, level = 'INFO'): ActivityKind | 'gateway' | undefined {
+  // Ignore WARNING and ERROR lines: background retries/warnings are not active agent work
+  if (level === 'WARNING' || level === 'ERROR') return undefined
   if (/^cron\b/.test(name)) return 'cron'
-  if (/^(tools|model_tools)\b/.test(name)) return 'tools'
+  // Ignore MCP client connection management, death supervisors, and background polling
+  if (/^(tools\.mcp_|mcp_death_supervisor|tools\.mcp_tool)/.test(name)) return undefined
+  if (/^(tools|model_tools)\b/.test(name)) {
+    // If message is a connection warning or error, ignore it
+    if (/\b(failed|reconnect|disconnected|parking|parked|error)\b/i.test(message)) return undefined
+    return 'tools'
+  }
   if (/^(agent|run_agent|batch_runner)\b/.test(name)) return 'thinking'
   if (/^(gateway|hermes_plugins|plugins\.platforms)\b/.test(name)) return CHAT_MESSAGE.test(message) ? 'chat' : 'gateway'
   return undefined // hermes_cli, uvicorn, gui: not agent work
@@ -774,17 +787,20 @@ export function parseRecentActivity(logOutput: string, sessionOutput?: string): 
   for (const line of lines(logOutput)) {
     const record = line.match(LOG_RECORD)
     if (!record) continue
-    const kind = loggerKind(record[2], record[3])
+    const level = record[2]
+    const name = record[3]
+    const message = record[4]
+    const kind = loggerKind(name, message, level)
     if (!kind) continue
     found.add(kind)
     if (kind !== 'gateway') lastSeen = record[1]
-    if (/\bopencode\b/i.test(record[3])) mentionsOpenCode = true
+    if (/\bopencode\b/i.test(message)) mentionsOpenCode = true
   }
   // Gateway lines alone can be polling noise; with agent-loop lines they are a chat reply.
   if (found.has('gateway') && (found.has('thinking') || found.has('tools'))) found.add('chat')
   let sessionActive = false
   if (sessionOutput) {
-    try { sessionActive = /^(just now|[0-3]m ago)$/.test(parseSessions(sessionOutput)[0]?.lastActive ?? '') } catch { sessionActive = false }
+    try { sessionActive = /^(just now|1m ago)$/.test(parseSessions(sessionOutput)[0]?.lastActive ?? '') } catch { sessionActive = false }
   }
   if (sessionActive && found.size === 0) found.add('chat')
   const kind = (['cron', 'chat', 'tools', 'thinking'] as const).find((item) => found.has(item))
@@ -819,9 +835,34 @@ export async function collectAgentActivity(profiles: readonly string[], run: Run
 /** One office station per agent: every Hermes profile, plus OpenCode when it is installed. */
 interface AgentSpec { id: string; role: string; profile?: string; gateway?: GatewayState; aliases: string[] }
 
+export const FLEET_ROLES: Record<string, string> = {
+  orion: 'Chief of Staff & Orchestrator',
+  aurora: 'Product & UX Design Direction',
+  frame: 'Frontend Engineering',
+  lens: 'Visual & Interaction QA',
+  forge: 'Backend, APIs & Systems',
+  prism: 'Functional QA & Correctness',
+  sentinel: 'Security & Threat Modeling',
+  atlas: 'Infrastructure, SRE & Reliability',
+  radar: 'Technical Research & Intelligence',
+  quant: 'Quantitative & Trading Research',
+  nexus: 'Operations & Documentation',
+  scholar: 'Academic Research & Literature',
+  groupbot: 'Community & Group Gateway',
+}
+
 export function agentRoster(runtime: RuntimeSnapshot): AgentSpec[] {
   const profiles = runtime.profiles.availability === 'available' ? runtime.profiles.data : []
-  const agents: AgentSpec[] = profiles.filter((profile) => PROFILE_NAME.test(profile.name)).map((profile) => ({ id: profile.name, role: 'Hermes profile', profile: profile.name, gateway: profile.gateway, aliases: [profile.name.toLowerCase()] }))
+  const agents: AgentSpec[] = profiles.filter((profile) => PROFILE_NAME.test(profile.name)).map((profile) => {
+    const key = profile.name.toLowerCase()
+    return {
+      id: profile.name,
+      role: FLEET_ROLES[key] ?? 'Hermes profile',
+      profile: profile.name,
+      gateway: profile.gateway,
+      aliases: [key],
+    }
+  })
   if (runtime.openCode.availability === 'available' && !agents.some((agent) => agent.id === 'opencode')) agents.push({ id: 'opencode', role: 'OpenCode', aliases: ['opencode', 'open-code'] })
   return agents
 }
